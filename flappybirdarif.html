@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Clone</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: url('feb91b1e-e12e-4a68-aaba-dea66520e079.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+        
+        let birdImage = new Image();
+        birdImage.src = "arif_transparent.png";
+        
+        let bird = { 
+            x: canvas.width * 0.1, 
+            y: canvas.height / 2, 
+            width: canvas.width * 0.1, 
+            height: canvas.height * 0.1, 
+            gravity: 0.12,  
+            lift: -2.5,  
+            velocity: 0 
+        };
+        
+        let pipes = [];
+        let frame = 0;
+        let gameRunning = false;
+        let isSpacePressed = false;
+        let score = 0;
+        let pipeSpeed = canvas.width * 0.0015;
+
+        function resetGame() {
+            bird.y = canvas.height / 2;
+            bird.velocity = 0;
+            pipes = [];
+            frame = 0;
+            gameRunning = false;
+            score = 0;
+            pipeSpeed = canvas.width * 0.0015;
+        }
+
+        function drawBird() {
+            ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
+        }
+
+        function updateBird() {
+            if (!gameRunning) return;
+            if (isSpacePressed) {
+                bird.velocity = bird.lift;
+            }
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+            if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                resetGame();
+            }
+        }
+
+        function createPipe() {
+            let gap = canvas.height * 0.4; 
+            let pipeWidth = canvas.width * 0.08;
+            let pipeHeight = Math.floor(Math.random() * (canvas.height - gap));
+            pipes.push({ x: canvas.width, y: 0, width: pipeWidth, height: pipeHeight, scored: false });
+            pipes.push({ x: canvas.width, y: pipeHeight + gap, width: pipeWidth, height: canvas.height - pipeHeight - gap, scored: false });
+        }
+
+        function drawPipes() {
+            ctx.fillStyle = "green";
+            pipes.forEach(pipe => {
+                ctx.fillRect(pipe.x, pipe.y, pipe.width, pipe.height);
+            });
+        }
+
+        function updatePipes() {
+            if (!gameRunning) return;
+            pipes.forEach(pipe => {
+                pipe.x -= pipeSpeed; 
+                if (!pipe.scored && pipe.x + pipe.width < bird.x) {
+                    score++;
+                    pipe.scored = true;
+                    if (score % 50 === 0) { 
+                        pipeSpeed += canvas.width * 0.0005;
+                    }
+                }
+                if (bird.x < pipe.x + pipe.width && bird.x + bird.width > pipe.x &&
+                    bird.y < pipe.y + pipe.height && bird.y + bird.height > pipe.y) {
+                    resetGame();
+                }
+            });
+            pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+        }
+
+        function drawScore() {
+            ctx.fillStyle = "black";
+            ctx.font = "30px Arial";
+            ctx.fillText("Score: " + score, 20, 40);
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBird();
+            drawPipes();
+            drawScore();
+            updateBird();
+            updatePipes();
+            
+            if (gameRunning && frame % 240 === 0) {
+                createPipe();
+            }
+            frame++;
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener("keydown", (event) => {
+            if (event.code === "Space") {
+                if (!gameRunning) gameRunning = true;
+                isSpacePressed = true;
+            }
+        });
+
+        document.addEventListener("keyup", (event) => {
+            if (event.code === "Space") {
+                isSpacePressed = false;
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
